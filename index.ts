@@ -11,10 +11,28 @@ type Instruction = {
   amount: number;
 };
 
+// Visually display all of the stacks.
+function printStacks(stacks: string[][]) {
+  const maxStackSize = stacks.reduce(
+    (prev: number, curr: string[]) => (curr.length > prev ? curr.length : prev),
+    0
+  );
+
+  for (let y = maxStackSize - 1; y >= 0; y--) {
+    console.log(
+      stacks
+        .map((stack) => (stack.length > y ? `[${stack[y]}]` : "   "))
+        .join(" ")
+    );
+  }
+  console.log(stacks.map((_, i) => ` ${i + 1} `).join(" "));
+}
+
+// Takes in a file and parses it's structure and instructions input.
 function parseInput(inputContent: string): [string[][], Instruction[]] {
   const rows = inputContent.split("\n");
 
-  const structure: string[][] = [];
+  const stacks: string[][] = [];
   const instructions: Instruction[] = [];
 
   let fillStructureRows = true;
@@ -40,11 +58,11 @@ function parseInput(inputContent: string): [string[][], Instruction[]] {
           continue;
         }
 
-        if (!structure[j]) {
-          structure[j] = [];
+        if (!stacks[j]) {
+          stacks[j] = [];
         }
 
-        structure[j].unshift(letter);
+        stacks[j].unshift(letter);
       }
     } else {
       const match = row.match(
@@ -58,18 +76,62 @@ function parseInput(inputContent: string): [string[][], Instruction[]] {
 
       const instruction: Instruction = {
         amount: parseInt(match?.groups?.amount as string),
-        from: parseInt(match?.groups?.from as string),
-        to: parseInt(match?.groups?.to as string),
+        from: parseInt(match?.groups?.from as string) - 1, // required as array starts at index 0
+        to: parseInt(match?.groups?.to as string) - 1, // required as array starts at index 0
       };
 
       instructions.push(instruction);
     }
   }
 
-  return [structure, instructions];
+  return [stacks, instructions];
+}
+
+// Applies the instructions to a clone of the stacks array
+function performInstructions(
+  stacks: string[][],
+  instructions: Instruction[]
+): string[][] {
+  stacks = structuredClone(stacks);
+
+  for (let i = 0; i < instructions.length; i++) {
+    const { from, to, amount } = instructions[i];
+
+    if (stacks[from].length < amount) {
+      console.warn(
+        "WARN: invalid instruction, can't move",
+        amount,
+        "from stack",
+        from,
+        "to stack",
+        to
+      );
+      continue;
+    }
+
+    for (let j = 0; j < amount; j++) {
+      const crate = stacks[from].pop();
+
+      if (!crate) {
+        // should never occur, because of the if statement.
+        continue;
+      }
+
+      stacks[to].push(crate);
+    }
+
+    console.log("Instruction #" + (i + 1));
+    printStacks(stacks);
+    console.log("");
+  }
+
+  return stacks;
 }
 
 const contents: string = fs.readFileSync(filePath, "utf-8");
-const [rows, instructions] = parseInput(contents);
+const [stacks, instructions] = parseInput(contents);
 
-console.log(rows, instructions);
+const result = performInstructions(stacks, instructions);
+
+console.log("The top crates:");
+console.log(result.map((stack) => stack[stack.length - 1]).join(""));
