@@ -1,7 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
 
-const [fileName] = process.argv.slice(2);
+const [moveMultiple = ""] = process.argv.slice(2);
+const fileName = process.argv.pop();
+
+const canMoveMultiple = moveMultiple === "--move-multiple";
 
 const filePath: string = path.join(__dirname, "../data/", `${fileName}.txt`);
 
@@ -70,7 +73,7 @@ function parseInput(inputContent: string): [string[][], Instruction[]] {
       );
 
       if (!match) {
-        console.warn("WARN: invalid instruction at line:", i, `"${row}"`);
+        console.warn("WARN: invalid instruction at line:", i + 1, `"${row}"`);
         continue;
       }
 
@@ -102,22 +105,27 @@ function performInstructions(
         "WARN: invalid instruction, can't move",
         amount,
         "from stack",
-        from,
+        from + 1,
         "to stack",
-        to
+        to + 1
       );
       continue;
     }
 
-    for (let j = 0; j < amount; j++) {
-      const crate = stacks[from].pop();
+    if (!canMoveMultiple) {
+      for (let j = 0; j < amount; j++) {
+        const crate = stacks[from].pop();
 
-      if (!crate) {
-        // should never occur, because of the if statement.
-        continue;
+        if (!crate) {
+          // should never occur, because of the if statement.
+          continue;
+        }
+
+        stacks[to].push(crate);
       }
-
-      stacks[to].push(crate);
+    } else {
+      const crates = stacks[from].splice(-amount, amount);
+      stacks[to].push(...crates);
     }
 
     console.log("Instruction #" + (i + 1));

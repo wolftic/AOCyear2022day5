@@ -25,7 +25,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
-const [fileName] = process.argv.slice(2);
+const [moveMultiple = ""] = process.argv.slice(2);
+const fileName = process.argv.pop();
+const canMoveMultiple = moveMultiple === "--move-multiple";
 const filePath = path.join(__dirname, "../data/", `${fileName}.txt`);
 // Visually display all of the stacks.
 function printStacks(stacks) {
@@ -69,7 +71,7 @@ function parseInput(inputContent) {
         else {
             const match = row.match(/move (?<amount>[0-9]+) from (?<from>[0-9]+) to (?<to>[0-9]+)/i);
             if (!match) {
-                console.warn("WARN: invalid instruction at line:", i, `"${row}"`);
+                console.warn("WARN: invalid instruction at line:", i + 1, `"${row}"`);
                 continue;
             }
             const instruction = {
@@ -88,16 +90,22 @@ function performInstructions(stacks, instructions) {
     for (let i = 0; i < instructions.length; i++) {
         const { from, to, amount } = instructions[i];
         if (stacks[from].length < amount) {
-            console.warn("WARN: invalid instruction, can't move", amount, "from stack", from, "to stack", to);
+            console.warn("WARN: invalid instruction, can't move", amount, "from stack", from + 1, "to stack", to + 1);
             continue;
         }
-        for (let j = 0; j < amount; j++) {
-            const crate = stacks[from].pop();
-            if (!crate) {
-                // should never occur, because of the if statement.
-                continue;
+        if (!canMoveMultiple) {
+            for (let j = 0; j < amount; j++) {
+                const crate = stacks[from].pop();
+                if (!crate) {
+                    // should never occur, because of the if statement.
+                    continue;
+                }
+                stacks[to].push(crate);
             }
-            stacks[to].push(crate);
+        }
+        else {
+            const crates = stacks[from].splice(-amount, amount);
+            stacks[to].push(...crates);
         }
         console.log("Instruction #" + (i + 1));
         printStacks(stacks);

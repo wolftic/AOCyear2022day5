@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node ./bin/index.js"
+    "start": "node ./bin/index.js",
+    "start-multiple": "node ./bin/index.js --move-multiple"
   },
   "author": "Lorenzo Kramer",
   "license": "ISC",
